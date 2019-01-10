@@ -1,0 +1,187 @@
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+  xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+	<modelVersion>4.0.0</modelVersion>
+	<groupId>${groupId}</groupId>
+	<artifactId>${artifactId}</artifactId>
+	<version>${version}</version>
+	<packaging>jar</packaging>
+  
+	<properties>
+		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+		<project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
+		<java.version>1.8</java.version>
+
+
+		<docker.registry.url></docker.registry.url>
+		<docker.registry.login></docker.registry.login>
+		<docker.registry.password></docker.registry.password>
+
+		<!-- maven plugin versions -->
+		<maven.clean.plugin.version>3.1.0</maven.clean.plugin.version>
+		<maven.compiler.plugin>3.8.0</maven.compiler.plugin>
+		<maven.antrun.plugin.version>1.8</maven.antrun.plugin.version>    
+		<maven.dependency.plugin>3.1.1</maven.dependency.plugin>
+		<maven.jar.plugin.version>3.1.1</maven.jar.plugin.version>
+		<maven.resources.plugin.version>3.1.0</maven.resources.plugin.version>
+
+		<!-- dependencies version -->
+		<spring-version>4.2.5.RELEASE</spring-version>
+		<activemq-version>5.5.0</activemq-version>    
+		<junit-version>4.12</junit-version>
+		<logback.version>1.1.5</logback.version>  
+	</properties>
+  
+	<dependencies>
+		<dependency>
+			<groupId>org.springframework</groupId>
+			<artifactId>spring-context</artifactId>
+			<version>${spring-version}</version>
+		</dependency>
+		
+		<!-- logging -->		
+		<dependency>
+			<groupId>ch.qos.logback</groupId>
+			<artifactId>logback-classic</artifactId>
+			<version>${logback.version}</version>
+		</dependency> 
+		
+		<!-- Testing -->
+		<dependency>
+		   <groupId>junit</groupId>
+		   <artifactId>junit</artifactId>
+		   <version>${junit-version}</version>
+		   <scope>test</scope>
+		</dependency>
+	</dependencies>
+  
+	<build>
+		<plugins>		
+		<!-- Auto Cleaning target directory -->
+			<plugin>
+				<artifactId>maven-clean-plugin</artifactId>
+				<version>${maven.clean.plugin.version}</version>
+				<executions>
+					<execution>
+						<id>auto-clean</id>
+						<phase>initialize</phase>
+						<goals>
+						  <goal>clean</goal>
+						</goals>
+					</execution>
+				</executions>
+			</plugin>
+			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-compiler-plugin</artifactId>
+				<version>${maven.compiler.plugin}</version>
+				<configuration>
+					<source>${java.version}</source>
+					<target>${java.version}</target>
+				</configuration>
+			</plugin>
+		</plugins>
+	</build>
+	<profiles>
+		<profile>
+			<id>build-docker-wincmd</id>
+			<properties>
+				<output.target>${project.build.directory}/${project.artifactId}-${project.version}</output.target>
+			</properties>
+			<build>
+				<defaultGoal>deploy</defaultGoal>      				
+				<resources>			
+					<resource>
+						<directory>docker</directory>
+						<targetPath>${output.target}</targetPath>
+						<filtering>false</filtering>
+					</resource> 		
+					<resource>
+						<directory>conf</directory>
+						<targetPath>${output.target}/container/conf</targetPath>
+						<filtering>false</filtering>
+					</resource>					
+					<resource>
+						<directory>lib</directory>
+						<targetPath>${output.target}/container/lib</targetPath>
+						<filtering>false</filtering>
+					</resource>
+				</resources>
+				<plugins>		
+					<plugin>
+						<groupId>org.apache.maven.plugins</groupId>
+						<artifactId>maven-dependency-plugin</artifactId>
+						<version>${maven.dependency.plugin}</version>
+						<executions>
+							<execution>
+								<id>copy_dependicies</id>
+								<phase>package</phase>
+								<goals>
+									<goal>copy-dependencies</goal>
+								</goals>
+								<configuration>
+									<outputXML>true</outputXML>
+									<includeScope>runtime</includeScope>
+									<outputDirectory>${output.target}/container/lib</outputDirectory>								
+								</configuration>
+							</execution>
+						</executions>				
+					</plugin>														
+					<plugin>
+						<groupId>org.apache.maven.plugins</groupId>
+						<artifactId>maven-jar-plugin</artifactId>
+						<version>${maven.jar.plugin.version}</version>
+						<configuration>
+							<outputDirectory>${output.target}/container</outputDirectory>
+						</configuration>
+					</plugin>										
+					<plugin>
+					<artifactId>maven-antrun-plugin</artifactId>
+						<executions>					    
+							<execution>
+								<id>check-docker-available-and-registry</id>
+								<phase>validate</phase>
+								<goals>
+									<goal>run</goal>
+								</goals>
+								<configuration>
+									<tasks>
+										<echo>Log in to registry</echo>
+										<exec executable="cmd" failonerror="true">
+											<arg value="/c"/>
+											<arg value="docker login -u ${docker.registry.login} -p ${docker.registry.password} ${docker.registry.url}" />
+										</exec>							
+									</tasks>
+								</configuration>
+							</execution>
+							<execution>
+								<id>build-and-push</id>
+								<phase>deploy</phase>
+								<goals>
+									<goal>run</goal>
+								</goals>
+								<configuration>
+									<tasks>	
+										<echo>docker build --build-arg container_path=${output.target}/container -f ${output.target}/Dockerfile -t ${docker.registry.url}/${docker.image.name}:${project.version} .</echo>					                	
+										<exec executable="cmd" failonerror="true">
+											<arg value="/c"/>
+											<arg value="docker build --build-arg container_path=target/${project.artifactId}-${project.version}/container -f ${output.target}/Dockerfile -t ${docker.registry.url}/${docker.image.name}:${project.version} ."/>
+										</exec>									
+										<exec executable="cmd" failonerror="true">
+											<arg value="/c"/>
+											<arg value="docker push ${docker.registry.url}/${docker.image.name}:${project.version}" />
+										</exec>										
+										<exec executable="cmd" failonerror="true">
+											<arg value="/c"/>
+											<arg value="docker logout ${docker.registry.url}" />
+										</exec>
+										<echo>Image was succesfully pushed</echo>								
+									</tasks>
+								</configuration>
+							</execution>
+						</executions>
+					</plugin>
+				</plugins>				
+			</build>
+		</profile>
+	</profiles>
+</project>
