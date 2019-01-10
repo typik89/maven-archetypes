@@ -12,9 +12,13 @@
 		<java.version>1.8</java.version>
 
 
+		<archiva.url></archiva.url>
+
 		<docker.registry.url></docker.registry.url>
 		<docker.registry.login></docker.registry.login>
 		<docker.registry.password></docker.registry.password>
+		<docker.image.name></docker.image.name>
+		
 
 		<!-- maven plugin versions -->
 		<maven.clean.plugin.version>3.1.0</maven.clean.plugin.version>
@@ -184,4 +188,18 @@
 			</build>
 		</profile>
 	</profiles>
+	
+	
+	<distributionManagement>
+       <repository>
+           <id>internal</id>
+           <url>${archiva.url}/archiva/repository/internal/</url>
+       </repository>
+       <snapshotRepository>
+           <id>snapshot</id>
+           <url>${archiva.url}/archiva/repository/snapshots/</url>
+       </snapshotRepository>
+   </distributionManagement>
+
+   
 </project>
