@@ -8,7 +8,7 @@ WORKDIR /opt
 ENV JMX_PORT=9020
 ENV JMX_HOST=localhost
 
-CMD java -Dcom.sun.management.jmxremote\ 
+CMD exec java -Dcom.sun.management.jmxremote\ 
          -Djava.rmi.server.hostname=${JMX_HOST}\ 
          -Dcom.sun.management.jmxremote.port=${JMX_PORT}\ 
          -Dcom.sun.management.jmxremote.rmi.port=${JMX_PORT}\ 

@@ -14,7 +14,8 @@ public class App{
 	
     public static void main( String[] args ){
     	try( ClassPathXmlApplicationContext ctx = 
-				new ClassPathXmlApplicationContext( new String[]{"application.xml"} ) ){			
+				new ClassPathXmlApplicationContext( new String[]{"application.xml"} ) ){
+    		ctx.registerShutdownHook();
 			new CountDownLatch(1).await();
 		}catch(Exception ex){
 			LOG.error( "Fatal error in starting ", ex );

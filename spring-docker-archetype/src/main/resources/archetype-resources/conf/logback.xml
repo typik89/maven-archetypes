@@ -2,9 +2,9 @@
 <!DOCTYPE xml>
 <configuration>   
   <appender name="FILE" class="ch.qos.logback.core.rolling.RollingFileAppender">
-		<File>target/var/log/${artifactId}/${artifactId}.log</File>
+		<File>/var/log/${artifactId}/${artifactId}.log</File>
 		<rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
-			<FileNamePattern>target/var/log/${artifactId}/${artifactId}.%d{yyyy-MM-dd}.log</FileNamePattern>
+			<FileNamePattern>/var/log/${artifactId}/${artifactId}.%d{yyyy-MM-dd}.log</FileNamePattern>
 			<maxHistory>10</maxHistory>
 		</rollingPolicy> 
 		<layout class="ch.qos.logback.classic.PatternLayout">
